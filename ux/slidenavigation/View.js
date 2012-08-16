@@ -25,29 +25,16 @@ Ext.define('Ext.ux.slidenavigation.View', {
         /**
          * @cfg {Object} list Configuration for the navigation list
          */
-        list: {
-            width: 250,
-            maxDrag: null,
-            html: 'arne',
-            
-            items: [{
-                xtype: 'toolbar',
-                docked: 'top',
-                ui: 'light'
-            }
-			]
-        },
+        		
+		sidePanel: {},
+		
+		sidePanelWidth: 200,
+		sidePanelmaxDrag: 250,
         
         /**
          * @cfg {Object} container Configuration for the container
          */
-        container: {items: [{
-					xtype: 'toolbar',
-					title: 'Item 1',
-					docked: 'top'
-				},{
-				html: 'test'
-			}]},
+        container: {},
 
         /**
          * @cfg {Array} items An array of items to put into the navigation list.
@@ -55,7 +42,7 @@ Ext.define('Ext.ux.slidenavigation.View', {
          * key, which should be a function to execute when selected.  Additionally, you
          * can define the order of the items by defining an 'order' parameter.
          */        
-        items: [],
+        //items: [],
         
         /**
          * @cfg {Object} groups Mapping of group name to order.  For example,
@@ -72,14 +59,14 @@ Ext.define('Ext.ux.slidenavigation.View', {
          *  You should use integers, starting with 1, as the ordering value.
          *  By default groups are ordered by their name.
          */
-        groups: {},
+        //groups: {},
         
         /**
          * @cfg {Object} defaults An object of default values to apply to any Ext
          * components created from those listed in ``items``.
          */
         defaults: {
-            layout: 'card'
+			layout: 'card'
         },
         
         /**
@@ -115,38 +102,9 @@ Ext.define('Ext.ux.slidenavigation.View', {
     initConfig: function() {
         var me = this;
         
-        me._indexCount = 0;
-        
-        /**
-         *  Create the store.
-         */
-        me.store = Ext.create('Ext.data.Store', {
-            model: me.getModel(),
-            sorters: 'order',
-            grouper: {
-                property: 'group',
-                sortProperty: 'groupOrder'
-            }
-        });
-        
-        /**
-         *  Add the items into the list.
-         */
-        me.addItems(me.config.items || []);
-        delete me.config.items;
         
         me.callParent(arguments);
         
-        /**
-         *  This stores the instances of the components created.
-         *  TODO: Support 'autoDestroy'.
-         *  @private
-         */
-        me._cache = {};
-        
-        /**
-         *  Default config values used for creating a slideButton.
-         */
         me.slideButtonDefaults = {
             xtype: 'button',
             iconMask: true,
@@ -163,8 +121,8 @@ Ext.define('Ext.ux.slidenavigation.View', {
             //selector: ['toolbar']
         };
         
-        //me.config = Ext.merge({}, me.config, config || {});
-        //return me.callParent(arguments);
+        
+        return me.callParent(arguments);
     },
             
     initialize: function() {
@@ -172,11 +130,18 @@ Ext.define('Ext.ux.slidenavigation.View', {
         
         this.addCls('x-slidenavigation');
         
-        this.list = this.createNavigationList();
+        //Create holder containers
+		this.sidePanel = this.createSidePanel();
         this.container = this.createContainer();
+		
+		
+		
+		// Puts your panels in the holder panels
+		this.sidePanel.add(this.getSidePanel());
+		this.container.add(this.getContainer());
         
         this.add([
-            this.list,
+            this.sidePanel,
             this.container
         ]);
         
@@ -185,22 +150,7 @@ Ext.define('Ext.ux.slidenavigation.View', {
         //this.list.select(0);
     },
     
-    /**
-     *  Adds an array of items (or a single item) into the list.
-     */
-    addItems: function(items) {
-        var me = this,
-            items = Ext.isArray(items) ? items : [items],
-            groups = me.config.groups;
-        
-        Ext.each(items, function(item, index) {
-            if (!Ext.isDefined(item.index)) {
-                item.index = me._indexCount;
-                me._indexCount++;
-            }
-            me.store.add(item);
-        });
-    },
+    
     
     /**
      *  Creates a button that can toggle the navigation menu.  For an example
@@ -216,51 +166,6 @@ Ext.define('Ext.ux.slidenavigation.View', {
         
         return false;
     },
-    
-    /**
-     * Called when an item in the list is tapped.
-     */
-    onSelect: function(list, item, eOpts) {
-        var me = this,
-            store = list.getStore(),
-            index = item.raw.index,
-            container = me.container;
-        
-        if (me._cache[index] == undefined) {
-            //container = this.down('container[cls="x-slidenavigation-container"]');
-            
-            // If the object has a handler defined, then we don't need to
-            // create an Ext object
-            if (Ext.isFunction(item.raw.handler)) {
-                me._cache[index] = item.raw.handler;
-            } else {
-                me._cache[index] = container.add(Ext.merge(me.config.defaults, item.raw));
-
-                // Add a button for controlling the slide, if desired
-                if ((item.raw.slideButton || false)) {
-                    me.createSlideButton(me._cache[index], item.raw.slideButton);
-                }
-            }
-        }
-        
-        if (Ext.isFunction(this._cache[index])) {
-            this._cache[index]();
-        } else {
-            container.setActiveItem(this._cache[index]);
-        }
-        
-        if (this.config.closeOnSelect) {
-            this.closeContainer(this.config.selectSlideDuration);
-        }
-    },
-    
-    // onContainerDrag: function(draggable, e, offset, eOpts) {
-    //     // if (offset.x < 1) {
-    //     //      this.setClosed(true);
-    //     //  } else {
-    //     //      this.setClosed(false);
-    //     //  }
-    // },
     
     onContainerDragstart: function(draggable, e, offset, eOpts) {
         if (this.config.slideSelector == false) {
@@ -283,54 +188,21 @@ Ext.define('Ext.ux.slidenavigation.View', {
         var velocity  = Math.abs(e.deltaX / e.deltaTime),
             direction = (e.deltaX > 0) ? "right" : "left",
             offset    = Ext.clone(draggable.offset),
-            threshold = parseInt(this.config.list.width * .70);
+            threshold = parseInt(this.config.sidePanelWidth * .70);
         
         switch (direction) {
             case "right":
-                offset.x = (velocity > 0.75 || offset.x > threshold) ? this.config.list.width : 0;
+                offset.x = (velocity > 0.75 || offset.x > threshold) ? this.config.sidePanelWidth : 0;
                 break;
             case "left":
-                offset.x = (velocity > 0.75 || offset.x < threshold) ? 0 : this.config.list.width;
+                offset.x = (velocity > 0.75 || offset.x < threshold) ? 0 : this.config.sidePanelWidth;
                 break;
         }
         
         this.moveContainer(offset.x);
     },
     
-    /**
-     * Registers the model with Ext.ModelManager, if it hasn't been
-     * already, and returns the name of the model for use in the store.
-     */
-    getModel: function() {
-        var model = 'SlideNavigationPanelItem',
-            groups = this.config.groups;
-        
-        if (!Ext.ModelManager.get(model)) {
-            Ext.define(model, {
-                extend: 'Ext.data.Model',
-                config: {
-                    idProperty: 'index',
-                    fields: [
-                        'index', 'title', 'group',
-                        {
-                            name: 'order',
-                            defaultValue: 1
-                        },{
-                            name: 'groupOrder',
-                            convert: function(value, record) {
-                                // By default we group and order by group name.
-                                group = record.get('group');
-                                return groups[group] || group;
-                            }
-                        }
-                    ]
-                }
-            });
-        }
-        
-        return model;
-    },
-    
+       
     /**
      *  Closes the container.  See ``moveContainer`` for more details.
      */
@@ -345,7 +217,7 @@ Ext.define('Ext.ux.slidenavigation.View', {
     openContainer: function(duration) {
         var duration = duration || this.config.slideDuration;
         this.container.addCls('open');
-        this.moveContainer(this.config.list.width, duration);
+        this.moveContainer(this.config.sidePanelWidth, duration);
     },
     
     toggleContainer: function(duration) {
@@ -420,23 +292,19 @@ Ext.define('Ext.ux.slidenavigation.View', {
      * Generates a new Ext.dataview.List object to be used for displaying
      * the navigation items.
      */
-    createNavigationList: function(store) {
-        return Ext.create('Ext.Panel', Ext.merge({}, this.getList(), {
-            store: this.store,
+    createSidePanel: function() {
+        return Ext.create('Ext.Panel', {
+            //store: this.store,
+			width: this.config.sidePanelWidth,
             docked: 'left',
-            //cls: 'x-slidenavigation-list',
-			top: 0,
-			left: 0,
-			height: '100%',
-			width: '250px',
-			zIndex: 2,
-            style: 'position: absolute; top: 0; left: 0; height: 100%;' +
-                     'width: 100% !important; z-index: 2',
+            cls: 'x-slidenavigation-container',
+			style: 'width: 100%; height: 100%; position: absolute; opacity: 1; z-index: 5',
+			layout: 'card',
             listeners: {
-                select: this.onSelect,
+                //select: this.onSelect,
                 scope: this
             }
-        }));
+        });
     },
     
     /**
@@ -444,20 +312,18 @@ Ext.define('Ext.ux.slidenavigation.View', {
      *  content.  This is the "slideable" container that is positioned above
      *  the navigation list.
      */
-    createContainer: function() {
-        return Ext.create('Ext.Container', Ext.merge({}, this.getContainer(), {
+    createContainer: function() {        
+		return Ext.create('Ext.Panel', {
             docked: 'left',
             cls: 'x-slidenavigation-container',
-			width: '100%',
-			height: '100%',
-			zIndex: 5,
-            style: 'position: absolute; opacity: 1;',
+            style: 'width: 100%; height: 100%; position: absolute; opacity: 1; z-index: 5',
+            docked: 'left',
             layout: 'card',
             draggable: {
                 direction: 'horizontal',
                 constraint: {
                     min: { x: 0, y: 0 },
-                    max: { x: this.getList().maxDrag || Math.max(screen.width, screen.height), y: 0 }
+                    max: { x: this.config.sidePanelmaxDrag || Math.max(screen.width, screen.height), y: 0 }
                 },
                 listeners: {
                     dragstart: {
@@ -465,7 +331,7 @@ Ext.define('Ext.ux.slidenavigation.View', {
                         order: 'before',
                         scope: this
                     },
-                    // drag: Ext.Function.createThrottled(this.onContainerDrag, 100, this),
+                    //drag: Ext.Function.createThrottled(this.onContainerDrag, 100, this),
                     dragend: this.onContainerDragend,
                     scope: this
                 },
@@ -480,6 +346,6 @@ Ext.define('Ext.ux.slidenavigation.View', {
                     }
                 }
             }
-        }));
+        });
     }
 });

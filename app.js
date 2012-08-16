@@ -8,11 +8,11 @@ Ext.application({
     name: 'SlideNavigationExample',
 
     requires: [
-        'Ext.MessageBox'
+        'Ext.MessageBox', 'SlideNavigationExample.view.Main2'
     ],
 
     views: [
-        'Main'
+        'Main', 'Main2'
     ],
 
     icon: {
@@ -34,7 +34,12 @@ Ext.application({
         Ext.fly('appLoadingIndicator').destroy();
 
         // Initialize the main view
-        Ext.Viewport.add(Ext.create('SlideNavigationExample.view.Main'));
+		
+		
+		
+		
+		Ext.Viewport.add(Ext.create('SlideNavigationExample.view.Main'));
+		//Ext.Viewport.add(pan1);
     },
 
     onUpdated: function() {

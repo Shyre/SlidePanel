@@ -28,31 +28,41 @@ Ext.define("SlideNavigationExample.view.Main", {
          *  looks.  Here we've added a custom search field and have
          *  modified the width.
          */
-        list: {
-            maxDrag: 250,
-            width: 200,
-            html: 'hello'
-            
-        },
-        
-        
-        items: [
-			{
-				
-				
-				
-				/**
-				 *  Here's an example of how we can add a button into
-				 *  particular location.  In this case, it'll be added into the
-				 *  item's toolbar.
-				 */
-				
-				items: [{
+		 sidePanelWidth: 250,
+		 sidePanelmaxDrag: 350,
+		 
+		 
+			 
+        sidePanel: Ext.create('SlideNavigationExample.view.Main2'),
+		/*Ext.create('Ext.Panel', {
+            config: {
+				id: 'arne3',
+				layout: 'card',
+				scroll: 'auto',
+				items: [
+					{
+						xtype: 'toolbar',
+						docked: 'top'
+					}
+				]
+			}
+		}),*/
+        container: Ext.create('Ext.Panel', {
+			 items: [
+				{
 					xtype: 'toolbar',
 					title: 'Item 1',
 					docked: 'top'
-				}]
-			}
+				},
+				{
+					html: 'test1s'
+				}
+			]
+		}),
+		
+        
+        items: [
+			
         ]
     }
 });
